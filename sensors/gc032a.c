@@ -328,6 +328,69 @@ static int set_gainceiling_dummy(sensor_t *sensor, gainceiling_t val)
     return -1;
 }
 
+static int set_whitebal(sensor_t *sensor, int enable)
+{
+    write_reg(sensor->slv_addr, 0xfe, 0x00);
+    return set_reg_bits(sensor->slv_addr, 0x42, 1, 0x01, enable); // AWB enable
+}
+
+
+static int set_dcw(sensor_t *sensor, int enable)
+{
+    write_reg(sensor->slv_addr, 0xfe, 0x02);
+    uint8_t val = (enable << 1) | enable;
+    return set_reg_bits(sensor->slv_addr, 0x40, 0, 0x02, val); // Dark current correction.
+}
+
+static int set_raw_gma(sensor_t *sensor, int enable)
+{
+    write_reg(sensor->slv_addr, 0xfe, 0x00);
+    if (enable) {
+        const uint8_t gamma[] = {0x9, 0x14, 0x19, 0x1f, 0x26, 0x32, 0x45, 0x53, 0x69, 0x7d, 0x8f, 0x9d, 
+                                0xa9, 0xbd, 0xcd, 0xd9, 0xe3, 0xea, 0xef, 0xf5, 0xf9, 0xff};
+        const uint8_t y_gamma[] = {0x9, 0x12, 0x16, 0x1b, 0x29, 0x37, 0x46, 0x54, 0x6b, 0x79, 0x85, 0x90, 
+                                0x9a, 0xaa, 0xb8, 0xc3, 0xcc, 0xd3, 0xdb, 0xe9, 0xf6, 0xff};
+        for (int i=0; i< sizeof(gamma); i++) {
+            set_reg_bits(sensor->slv_addr, 0x5a + i, 0, 0xff, gamma[i]);
+            set_reg_bits(sensor->slv_addr, 0xba + i, 0, 0xff, y_gamma[i]);
+        }
+    } else {
+        // Apply a linear mapping.
+        const uint8_t gamma[] = {1, 3, 5, 7, 11, 15, 19, 23, 31, 38, 47, 55, 
+                                63, 79, 95, 111, 127, 143, 159, 191, 223, 255};
+        for (int i=0; i< sizeof(gamma); i++) {
+            set_reg_bits(sensor->slv_addr, 0x5a + i, 0, 0xff, gamma[i]);
+            set_reg_bits(sensor->slv_addr, 0xba + i, 0, 0xff, gamma[i]);
+        }
+    }
+    return 0;
+}
+
+
+static int set_exposure_ctrl(sensor_t *sensor, int enable)
+{
+    write_reg(sensor->slv_addr, 0xfe, 0x00);
+    return set_reg_bits(sensor->slv_addr, 0x4f, 0, 0x01, enable); // AEC enable
+}
+
+static int set_aec_value(sensor_t *sensor, int value)
+{
+    write_reg(sensor->slv_addr, 0xfe, 0x00);
+    set_reg_bits(sensor->slv_addr, 0x04, 0, 0xff, value & 0xff); // Exposure settings.
+    return set_reg_bits(sensor->slv_addr, 0x03, 0, 0xff, (value >> 8) & 0xff);
+}
+
+static int set_gain_ctrl(sensor_t *sensor, int value)
+{
+    write_reg(sensor->slv_addr, 0xfe, 0x00);
+    const uint8_t global_gain = value & 0xff;
+    const uint8_t pregain = (value >> 8) & 0xff;
+    const uint8_t postgain = (value >> 16) & 0xff;
+    set_reg_bits(sensor->slv_addr, 0x70, 0, 0xff, global_gain);
+    set_reg_bits(sensor->slv_addr, 0x71, 0, 0xff, pregain);
+    return set_reg_bits(sensor->slv_addr, 0x72, 0, 0xff, postgain);
+}
+
 int gc032a_detect(int slv_addr, sensor_id_t *id)
 {
     if (GC032A_SCCB_ADDR == slv_addr) {
@@ -358,26 +421,26 @@ int gc032a_init(sensor_t *sensor)
     sensor->set_gainceiling = set_gainceiling_dummy;
     sensor->set_quality = set_dummy;
     sensor->set_colorbar = set_colorbar;
-    sensor->set_whitebal = set_dummy;
-    sensor->set_gain_ctrl = set_dummy;
-    sensor->set_exposure_ctrl = set_dummy;
+    sensor->set_whitebal = set_whitebal;
+    sensor->set_gain_ctrl = set_gain_ctrl;
+    sensor->set_exposure_ctrl = set_exposure_ctrl;
     sensor->set_hmirror = set_hmirror;
     sensor->set_vflip = set_vflip;
 
     sensor->set_aec2 = set_dummy;
     sensor->set_awb_gain = set_dummy;
     sensor->set_agc_gain = set_dummy;
-    sensor->set_aec_value = set_dummy;
+    sensor->set_aec_value = set_aec_value;
 
     sensor->set_special_effect = set_dummy;
     sensor->set_wb_mode = set_dummy;
     sensor->set_ae_level = set_dummy;
 
-    sensor->set_dcw = set_dummy;
+    sensor->set_dcw = set_dcw;
     sensor->set_bpc = set_dummy;
     sensor->set_wpc = set_dummy;
 
-    sensor->set_raw_gma = set_dummy;
+    sensor->set_raw_gma = set_raw_gma;
     sensor->set_lenc = set_dummy;
 
     sensor->get_reg = get_reg;
