@@ -331,15 +331,33 @@ static int set_gainceiling_dummy(sensor_t *sensor, gainceiling_t val)
 static int set_whitebal(sensor_t *sensor, int enable)
 {
     write_reg(sensor->slv_addr, 0xfe, 0x00);
-    return set_reg_bits(sensor->slv_addr, 0x42, 1, 0x01, enable); // AWB enable
+    set_reg_bits(sensor->slv_addr, 0x42, 1, 0x01, enable); // AWB enable
+    // Also turn off color correction.
+    return set_reg_bits(sensor->slv_addr, 0x40, 5, 0x01, enable); // CC_en.
+}
+
+static int set_sharpness(sensor_t *sensor, int value)
+{
+    write_reg(sensor->slv_addr, 0xfe, 0x00);
+    const bool enable = value > 0;
+    // Turn off edge enhancement.
+    return set_reg_bits(sensor->slv_addr, 0x40, 4, 0x1, enable);
+}
+
+static int set_denoise(sensor_t *sensor, int value)
+{
+    write_reg(sensor->slv_addr, 0xfe, 0x00);
+    const bool enable = value > 0;
+    // Turn off edge enhancement.
+    return set_reg_bits(sensor->slv_addr, 0x40, 2, 0x1, enable);
 }
 
 
 static int set_dcw(sensor_t *sensor, int enable)
 {
     write_reg(sensor->slv_addr, 0xfe, 0x02);
-    uint8_t val = (enable << 1) | enable;
-    return set_reg_bits(sensor->slv_addr, 0x40, 0, 0x02, val); // Dark current correction.
+    uint8_t val = (enable << 1) | enable; 
+    return set_reg_bits(sensor->slv_addr, 0x40, 0, 0x03, val); // Dark current correction.
 }
 
 static int set_raw_gma(sensor_t *sensor, int enable)
@@ -383,6 +401,7 @@ static int set_aec_value(sensor_t *sensor, int value)
 static int set_gain_ctrl(sensor_t *sensor, int value)
 {
     write_reg(sensor->slv_addr, 0xfe, 0x00);
+    // Value encodes the following:
     const uint8_t global_gain = value & 0xff;
     const uint8_t pregain = (value >> 8) & 0xff;
     const uint8_t postgain = (value >> 16) & 0xff;
@@ -416,8 +435,8 @@ int gc032a_init(sensor_t *sensor)
     sensor->set_contrast = set_dummy;
     sensor->set_brightness = set_dummy;
     sensor->set_saturation = set_dummy;
-    sensor->set_sharpness = set_dummy;
-    sensor->set_denoise = set_dummy;
+    sensor->set_sharpness = set_sharpness;
+    sensor->set_denoise = set_denoise;
     sensor->set_gainceiling = set_gainceiling_dummy;
     sensor->set_quality = set_dummy;
     sensor->set_colorbar = set_colorbar;
