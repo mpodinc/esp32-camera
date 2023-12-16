@@ -20,6 +20,7 @@
 static const uint16_t gc032a_default_regs[][2] = {
     /*System*/
     {0xf3, 0xff},
+    {0xf4, 0x01}, // Turn off pwrdwn pull-down, wastes power.
     {0xf5, 0x06},
     {0xf7, 0x01},
     {0xf8, 0x03},
