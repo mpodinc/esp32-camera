@@ -148,6 +148,8 @@ static int reset(sensor_t *sensor)
         set_reg_bits(sensor->slv_addr, 0xf8, 0, 0x3f, 8); //PLL_mode2 :divx4
         set_reg_bits(sensor->slv_addr, 0xfa, 4, 0x0f, 2); //vlk div mode :divide_by
     }
+    // Insert a delay so any subsequent programming happens after this delay.
+    vTaskDelay(100 / portTICK_PERIOD_MS);
 
     return ret;
 }
