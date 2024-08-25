@@ -77,7 +77,7 @@ static int check_reg_mask(uint8_t slv_addr, uint16_t reg, uint8_t mask)
 
 static void print_regs(uint8_t slv_addr)
 {
-#ifdef DEBUG_PRINT_REG
+//#ifdef DEBUG_PRINT_REG
     vTaskDelay(pdMS_TO_TICKS(100));
     ESP_LOGI(TAG, "REG list look ======================");
     for (size_t i = 0xf0; i <= 0xfe; i++) {
@@ -85,31 +85,25 @@ static void print_regs(uint8_t slv_addr)
     }
     ESP_LOGI(TAG, "\npage 0 ===");
     write_reg(slv_addr, 0xfe, 0x00); // page 0
-    for (size_t i = 0x03; i <= 0x24; i++) {
-        ESP_LOGI(TAG, "p0 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
-    }
-    for (size_t i = 0x40; i <= 0x95; i++) {
+    for (size_t i = 0x00; i < 0xf0; i++) {
         ESP_LOGI(TAG, "p0 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
     }
     ESP_LOGI(TAG, "\npage 1 ===");
     write_reg(slv_addr, 0xfe, 0x01); // page 1
-    for (size_t i = 0x5; i <= 0x8; i++) {
-        ESP_LOGI(TAG, "p1 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
-    }
-    for (size_t i = 0x1f; i <= 0x3d; i++) {
+    for (size_t i = 0x00; i < 0xf0; i++) {
         ESP_LOGI(TAG, "p1 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
     }
     ESP_LOGI(TAG, "\npage 2 ===");
     write_reg(slv_addr, 0xfe, 0x02); // page 2
-    for (size_t i = 0x40; i <= 0x4e; i++) {
+    for (size_t i = 0x00; i < 0xf0; i++) {
         ESP_LOGI(TAG, "p2 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
     }
     ESP_LOGI(TAG, "\npage 3 ===");
     write_reg(slv_addr, 0xfe, 0x03); // page 3
-    for (size_t i = 0x01; i <= 0x43; i++) {
+    for (size_t i = 0x00; i < 0xf0; i++) {
         ESP_LOGI(TAG, "p3 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
     }
-#endif
+//#endif
 }
 
 static int set_reg_bits(uint8_t slv_addr, uint16_t reg, uint8_t offset, uint8_t mask, uint8_t value)
