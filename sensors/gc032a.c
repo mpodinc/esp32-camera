@@ -91,6 +91,19 @@ static void print_regs(uint8_t slv_addr)
     for (size_t i = 0x40; i <= 0x95; i++) {
         ESP_LOGI(TAG, "p0 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
     }
+    ESP_LOGI(TAG, "\npage 1 ===");
+    write_reg(slv_addr, 0xfe, 0x01); // page 1
+    for (size_t i = 0x5; i <= 0x8; i++) {
+        ESP_LOGI(TAG, "p1 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
+    }
+    for (size_t i = 0x1f; i <= 0x3d; i++) {
+        ESP_LOGI(TAG, "p1 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
+    }
+    ESP_LOGI(TAG, "\npage 2 ===");
+    write_reg(slv_addr, 0xfe, 0x02); // page 2
+    for (size_t i = 0x40; i <= 0x4e; i++) {
+        ESP_LOGI(TAG, "p2 reg[0x%02x] = 0x%02x", i, read_reg(slv_addr, i));
+    }
     ESP_LOGI(TAG, "\npage 3 ===");
     write_reg(slv_addr, 0xfe, 0x03); // page 3
     for (size_t i = 0x01; i <= 0x43; i++) {
@@ -213,7 +226,7 @@ static int set_framesize(sensor_t *sensor, framesize_t framesize)
     if (ret == 0) {
         ESP_LOGD(TAG, "Set framesize to: %ux%u", w, h);
     }
-    print_regs(sensor->slv_addr);
+    //print_regs(sensor->slv_addr);
     return ret;
 }
 
@@ -321,6 +334,7 @@ static int init_status(sensor_t *sensor)
 
 static int set_dummy(sensor_t *sensor, int val)
 {
+    print_regs(sensor->slv_addr);
     ESP_LOGW(TAG, "Unsupported");
     return -1;
 }
@@ -334,6 +348,13 @@ static int set_whitebal(sensor_t *sensor, int enable)
 {
     write_reg(sensor->slv_addr, 0xfe, 0x00);
     set_reg_bits(sensor->slv_addr, 0x42, 1, 0x01, enable); // AWB enable
+    if (!enable) {
+        // Restore original settings.
+        set_reg_bits(sensor->slv_addr, 0x77, 0, 0xff, 0x64);
+        set_reg_bits(sensor->slv_addr, 0x78, 0, 0xff, 0x40);
+        set_reg_bits(sensor->slv_addr, 0x79, 0, 0xff, 0x60);
+        set_reg_bits(sensor->slv_addr, 0x4e, 0, 0x7, 0x0);
+    }
     // Also turn off color correction.
     return set_reg_bits(sensor->slv_addr, 0x40, 5, 0x01, enable); // CC_en.
 }
@@ -353,7 +374,6 @@ static int set_denoise(sensor_t *sensor, int value)
     // Turn off edge enhancement.
     return set_reg_bits(sensor->slv_addr, 0x40, 2, 0x1, enable);
 }
-
 
 static int set_dcw(sensor_t *sensor, int enable)
 {
@@ -397,7 +417,7 @@ static int set_aec_value(sensor_t *sensor, int value)
 {
     write_reg(sensor->slv_addr, 0xfe, 0x00);
     set_reg_bits(sensor->slv_addr, 0x04, 0, 0xff, value & 0xff); // Exposure settings.
-    return set_reg_bits(sensor->slv_addr, 0x03, 0, 0xff, (value >> 8) & 0xff);
+    return set_reg_bits(sensor->slv_addr, 0x03, 0, 0xf, (value >> 8) & 0xf);
 }
 
 static int set_gain_ctrl(sensor_t *sensor, int value)
