@@ -71,6 +71,7 @@
 #include "sensor.h"
 #include "sys/time.h"
 #include "sdkconfig.h"
+#include "driver/i2c_master.h"
 
 /**
  * @brief define for if chip supports camera
@@ -155,6 +156,7 @@ typedef struct {
 #endif
 
     int sccb_i2c_port;              /*!< If pin_sccb_sda is -1, use the already configured I2C bus by number */
+    i2c_master_bus_handle_t bus_master;   /*!< If not NULL, use this already configured bus master */
 } camera_config_t;
 
 /**

@@ -9,8 +9,8 @@
 #ifndef __SCCB_H__
 #define __SCCB_H__
 #include <stdint.h>
-int SCCB_Init(int pin_sda, int pin_scl);
-int SCCB_Use_Port(int sccb_i2c_port);
+#include "driver/i2c_master.h"
+int SCCB_Init(int pin_sda, int pin_scl, i2c_master_bus_handle_t bus_master);
 int SCCB_Deinit(void);
 uint8_t SCCB_Probe(void);
 uint8_t SCCB_Read(uint8_t slv_addr, uint8_t reg);

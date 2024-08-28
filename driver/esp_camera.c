@@ -163,13 +163,8 @@ static esp_err_t camera_probe(const camera_config_t *config, camera_model_t *out
         CAMERA_ENABLE_OUT_CLOCK(config);
     }
 
-    if (config->pin_sccb_sda != -1) {
-        ESP_LOGD(TAG, "Initializing SCCB");
-        ret = SCCB_Init(config->pin_sccb_sda, config->pin_sccb_scl);
-    } else {
-        ESP_LOGD(TAG, "Using existing I2C port");
-        ret = SCCB_Use_Port(config->sccb_i2c_port);
-    }
+    ESP_LOGD(TAG, "Initializing SCCB");
+    ret = SCCB_Init(config->pin_sccb_sda, config->pin_sccb_scl, config->bus_master);
 
     if(ret != ESP_OK) {
         ESP_LOGE(TAG, "sccb init err");
