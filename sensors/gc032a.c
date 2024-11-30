@@ -416,14 +416,24 @@ static int set_aec_value(sensor_t *sensor, int value)
 
 static int set_gain_ctrl(sensor_t *sensor, int value)
 {
+    // Generally stratedgy is:
+    // 1. Increase analog gain.
+    // 2. Increase pregain if needed, starting from unity (0x20=1x, 0x40=2x, etc...).
+    // 3. Increase postgain only if pregain maxed out, starting from unity (0x40=1x, 0x80=2x, etc...).
+    // 4. Increase global gain until brightest pixel maps to 255 without clipping.
     write_reg(sensor->slv_addr, 0xfe, 0x00);
     // Value encodes the following:
+    // Digital gains:
     const uint8_t global_gain = value & 0xff;
     const uint8_t pregain = (value >> 8) & 0xff;
+    // Note this only control quantization mapping from 0 - 255.
     const uint8_t postgain = (value >> 16) & 0xff;
-    set_reg_bits(sensor->slv_addr, 0x70, 0, 0xff, global_gain);
+    // Analog gain:
+    const uint8_t gain_code = (value >> 24) & 0xf;
+    set_reg_bits(sensor->slv_addr, 0x48, 0, 0xf, gain_code);
     set_reg_bits(sensor->slv_addr, 0x71, 0, 0xff, pregain);
-    return set_reg_bits(sensor->slv_addr, 0x72, 0, 0xff, postgain);
+    set_reg_bits(sensor->slv_addr, 0x72, 0, 0xff, postgain);
+    return set_reg_bits(sensor->slv_addr, 0x70, 0, 0xff, global_gain);
 }
 
 int gc032a_detect(int slv_addr, sensor_id_t *id)
